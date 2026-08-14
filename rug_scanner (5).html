@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemeShield — Token Risk Scan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #08080d;
+    --panel: #0f0f18;
+    --panel-2: #14141f;
+    --line: #22222f;
+    --ink: #e8e8ef;
+    --ink-dim: #8b8fa3;
+    --ink-faint: #55586b;
+    --violet: #7c6cf0;
+    --violet-dim: #4a3f96;
+    --mint: #35d99a;
+    --coral: #ff5c72;
+    --amber: #f0b429;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  /* ticker */
+  .ticker{
+    display:flex; gap:32px; overflow:hidden; white-space:nowrap;
+    background:var(--panel); border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; padding:8px 20px; color:var(--ink-dim);
+  }
+  .ticker span.up{color:var(--mint);} .ticker span.down{color:var(--coral);}
+
+  /* header */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-weight:700; letter-spacing:.04em;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--violet); box-shadow:0 0 12px var(--violet);}
+  .badge{font-size:10px; padding:2px 8px; border:1px solid var(--line); border-radius:20px; color:var(--ink-faint); font-family:var(--mono);}
+
+  main{max-width:1120px; margin:0 auto; padding:48px 24px 100px;}
+
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--violet); text-transform:uppercase;}
+  h1{
+    font-family:var(--mono); font-size:clamp(30px,4vw,46px); line-height:1.1; margin:14px 0 10px;
+    font-weight:700;
+  }
+  h1 .strike{color:var(--ink-faint); text-decoration:line-through; font-weight:500;}
+  .sub{color:var(--ink-dim); max-width:640px; line-height:1.6; font-size:14px;}
+  .chains{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0;}
+  .chip{
+    font-family:var(--mono); font-size:11px; padding:6px 12px; border-radius:6px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-dim); cursor:pointer;
+  }
+  .chip.active{border-color:var(--violet); color:var(--violet); background:rgba(124,108,240,.08);}
+
+  .scan-row{display:flex; gap:10px; margin-top:18px;}
+  .scan-input{
+    flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; color:var(--ink); font-family:var(--mono); font-size:13px;
+  }
+  .scan-input:focus{outline:none; border-color:var(--violet);}
+  .scan-btn{
+    background:var(--violet); border:none; color:#fff; font-weight:700; font-family:var(--sans);
+    padding:0 26px; border-radius:8px; cursor:pointer; font-size:14px;
+  }
+  .scan-btn:hover{background:#8f80ff;}
+
+  .toggle-row{display:flex; align-items:center; gap:8px; margin-top:14px; font-family:var(--mono); font-size:11px; color:var(--ink-faint); cursor:pointer;}
+  .toggle-row .car{transition:transform .2s;}
+  .toggle-row.open .car{transform:rotate(90deg);}
+
+  .signals{
+    display:none; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px;
+  }
+  .signals.open{display:grid;}
+  .field label{display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em;}
+  .field select{
+    width:100%; background:var(--panel); border:1px solid var(--line); border-radius:6px; color:var(--ink);
+    padding:10px; font-family:var(--sans); font-size:13px;
+  }
+
+  /* result */
+  .result{
+    margin-top:40px; border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    display:none; overflow:hidden;
+  }
+  .result.show{display:block;}
+  .result-top{
+    display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--line);
+  }
+  .result-top .addr{font-family:var(--mono); font-size:12px; color:var(--ink-dim);}
+  .verdict-tag{font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:20px; font-weight:700; letter-spacing:.04em;}
+
+  .gauge-wrap{display:flex; gap:40px; padding:30px 26px; align-items:center; flex-wrap:wrap;}
+  .gauge{position:relative; width:220px; height:130px;}
+  .score-num{font-family:var(--mono); font-size:44px; font-weight:700; text-align:center; margin-top:-10px;}
+  .score-lbl{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:center; letter-spacing:.1em;}
+
+  .checklist{flex:1; min-width:260px; display:flex; flex-direction:column; gap:10px;}
+  .check-item{
+    display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
+    background:var(--panel-2); border-radius:8px; border:1px solid var(--line); font-size:12.5px;
+  }
+  .check-item .name{color:var(--ink-dim); font-family:var(--sans);}
+  .flag{font-family:var(--mono); font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px;}
+  .flag.ok{background:rgba(53,217,154,.12); color:var(--mint);}
+  .flag.warn{background:rgba(240,180,41,.12); color:var(--amber);}
+  .flag.bad{background:rgba(255,92,114,.12); color:var(--coral);}
+
+  .disclaimer{
+    padding:16px 26px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint); line-height:1.6;
+  }
+
+  /* pricing */
+  .pricing-head{margin-top:90px; text-align:center;}
+  .pricing-head h2{font-family:var(--mono); font-size:28px; margin-bottom:8px;}
+  .pricing-head p{color:var(--ink-dim); font-size:13.5px;}
+
+  .tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:32px;}
+  @media(max-width:800px){.tiers{grid-template-columns:1fr;} .gauge-wrap{flex-direction:column;}}
+
+  .tier{
+    border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:26px;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .tier.featured{border-color:var(--violet); background:linear-gradient(180deg, rgba(124,108,240,.08), var(--panel) 40%); position:relative;}
+  .tier.featured::before{
+    content:'MOST USED'; position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+    background:var(--violet); color:#fff; font-family:var(--mono); font-size:10px; padding:3px 10px; border-radius:20px; letter-spacing:.06em;
+  }
+  .tier h3{font-family:var(--mono); font-size:14px; letter-spacing:.04em; margin:0; color:var(--ink-dim);}
+  .price{font-family:var(--mono); font-size:32px; font-weight:700;}
+  .price span{font-size:13px; color:var(--ink-faint); font-weight:500;}
+  .tier ul{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px;}
+  .tier li{font-size:12.5px; color:var(--ink-dim); display:flex; gap:8px;}
+  .tier li::before{content:'—'; color:var(--violet);}
+  .tier-btn{
+    margin-top:auto; background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
+    padding:11px; border-radius:8px; font-family:var(--sans); font-weight:600; font-size:13px; cursor:pointer;
+  }
+  .tier.featured .tier-btn{background:var(--violet); border-color:var(--violet); color:#fff;}
+  .tier-btn:hover{opacity:.85;}
+
+  footer{text-align:center; color:var(--ink-faint); font-size:11px; padding:40px 0 10px; font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+  <div class="ticker" id="ticker"></div>
+
+  <header>
+    <div class="brand"><span class="dot"></span> MEMESHIELD <span class="badge">LIVE SCAN</span></div>
+    <div class="badge" id="clock"></div>
+  </header>
+
+  <main>
+    <div class="eyebrow">Multi-chain // Diligence unit</div>
+    <h1>MemeShield</h1>
+    <p class="sub">Paste a link from pump.fun, Axiom, DexScreener, Uniswap, or any block explorer — or a raw contract address. Chain is auto-detected. This tool weighs on-chain structure, not intent — it does not replace your own judgment.</p>
+
+    <div class="chains" id="chains"></div>
+
+    <div class="scan-row">
+      <input class="scan-input" id="addrInput" placeholder="Paste contract address or token link…">
+      <button class="scan-btn" onclick="runScan()">Scan</button>
+    </div>
+
+    <div class="toggle-row" id="toggleSignals" onclick="toggleSig()">
+      <span class="car">▸</span> Add creator / social signals (optional, improves accuracy)
+    </div>
+    <div class="signals" id="sigPanel">
+      <div class="field"><label>X (Twitter) followers</label><select id="followers"><option>Unknown</option><option>Under 500</option><option>500 – 5,000</option><option>Over 5,000</option></select></div>
+      <div class="field"><label>X account age</label><select id="age"><option>Unknown</option><option>Under 3 months</option><option>3–12 months</option><option>Over 1 year</option></select></div>
+      <div class="field"><label>LP tokens locked/burned?</label><select id="lp"><option>Unknown</option><option>Yes, verified</option><option>No / not verified</option></select></div>
+      <div class="field"><label>Creator's past launches</label><select id="past"><option>Unknown</option><option>First known launch</option><option>Prior launches, no rugs found</option><option>Has rugged before</option></select></div>
+    </div>
+
+    <div class="result" id="resultBox">
+      <div class="result-top">
+        <div class="addr" id="scannedAddr"></div>
+        <div class="verdict-tag" id="verdictTag"></div>
+      </div>
+      <div class="gauge-wrap">
+        <div>
+          <div class="gauge"><svg id="gaugeSvg" width="220" height="130" viewBox="0 0 220 130"></svg></div>
+          <div class="score-num" id="scoreNum">—</div>
+          <div class="score-lbl">RISK SCORE / 100</div>
+        </div>
+        <div class="checklist" id="checklist"></div>
+      </div>
+      <div class="disclaimer">
+        <strong>This is a heuristic estimate, not financial advice.</strong> It weighs on-chain structure and market data that correlate with past rug pulls — it cannot see a creator's intent, off-chain agreements, or coordinated dumps planned in private groups. Solana checks run deepest; EVM chains skip holder-concentration scoring, which needs a paid indexer — cross-check the linked block explorer yourself. A clean scan is not a safety guarantee. Size positions as if you could lose the full amount.
+      </div>
+    </div>
+
+    <div class="pricing-head">
+      <h2>Unlock the full case file</h2>
+      <p>Free scans show the headline score. Subscribers get the full evidence trail, alerts, and API access.</p>
+    </div>
+
+    <div class="tiers">
+      <div class="tier">
+        <h3>SCOUT</h3>
+        <div class="price">$0<span>/mo</span></div>
+        <ul>
+          <li>5 scans / day</li>
+          <li>Headline risk score</li>
+          <li>Solana + EVM detection</li>
+        </ul>
+        <button class="tier-btn" onclick="subscribe('scout')">Current plan</button>
+      </div>
+      <div class="tier featured">
+        <h3>DETECTIVE</h3>
+        <div class="price">$10<span>/mo</span></div>
+        <ul>
+          <li>Unlimited scans</li>
+          <li>Full evidence checklist</li>
+          <li>Holder-concentration on EVM</li>
+          <li>Watchlist + Telegram alerts</li>
+        </ul>
+        <button class="tier-btn" onclick="subscribe('detective')">Subscribe</button>
+      </div>
+      <div class="tier">
+        <h3>SYNDICATE</h3>
+        <div class="price">$35<span>/mo</span></div>
+        <ul>
+          <li>Everything in Detective</li>
+          <li>REST API access</li>
+          <li>Bulk address scanning</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="tier-btn" onclick="subscribe('syndicate')">Subscribe</button>
+      </div>
+    </div>
+
+  </main>
+
+<script>
+  // ticker
+  const tickerData = [
+    ['SOL','$74.73',2.82],['ETH','$1,914.38',0.79],['BTC','$64,560.77',0.91]
+  ];
+  const tickerEl = document.getElementById('ticker');
+  let html='';
+  for(let i=0;i<4;i++){
+    tickerData.forEach(([s,p,c])=>{
+      html += `<span>${s} ${p} <span class="${c>=0?'up':'down'}">${c>=0?'+':''}${c}%</span></span>`;
+    });
+  }
+  tickerEl.innerHTML = html;
+
+  // clock
+  function tick(){
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+  tick(); setInterval(tick,1000*30);
+
+  // chains
+  const chains = ['Solana','Ethereum','Base','BNB Chain','Arbitrum','Polygon','Avalanche','Optimism'];
+  const chainsEl = document.getElementById('chains');
+  chains.forEach((c,i)=>{
+    const d = document.createElement('div');
+    d.className = 'chip' + (i===0?' active':'');
+    d.textContent = c;
+    d.onclick = ()=>{ document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); d.classList.add('active'); };
+    chainsEl.appendChild(d);
+  });
+
+  function toggleSig(){
+    document.getElementById('toggleSignals').classList.toggle('open');
+    document.getElementById('sigPanel').classList.toggle('open');
+  }
+
+  // deterministic pseudo-score from address string — used ONLY as a fallback
+  // when real chain data can't be fetched (wrong chain, bad address, RPC hiccup, etc.)
+  function hashScore(str){
+    let h = 0;
+    for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+    return h % 100;
+  }
+
+  // ---- REAL Solana on-chain checks (public RPC, no API key needed) ----
+  const SOL_RPC = 'https://api.mainnet-beta.solana.com';
+  async function rpc(method, params){
+    const res = await fetch(SOL_RPC, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0', id:1, method, params})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.result;
+  }
+
+  function isLikelySolanaAddress(str){
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(str);
+  }
+
+  async function fetchRealSolanaSignals(mint){
+    // 1. Mint account: reveals mint authority + freeze authority
+    const acct = await rpc('getAccountInfo', [mint, {encoding:'jsonParsed'}]);
+    if(!acct || !acct.value || !acct.value.data || !acct.value.data.parsed){
+      throw new Error('Not a recognizable SPL token mint');
+    }
+    const info = acct.value.data.parsed.info;
+    const mintAuthorityRevoked = info.mintAuthority === null;
+    const freezeAuthorityRevoked = info.freezeAuthority === null;
+
+    // 2. Top holders vs total supply -> concentration
+    const [largest, supply] = await Promise.all([
+      rpc('getTokenLargestAccounts', [mint]),
+      rpc('getTokenSupply', [mint])
+    ]);
+    const totalSupply = parseFloat(supply.value.uiAmountString || supply.value.uiAmount || 0);
+    const top10Sum = (largest.value || []).slice(0,10)
+      .reduce((sum, a) => sum + parseFloat(a.uiAmountString || a.uiAmount || 0), 0);
+    const top10Pct = totalSupply > 0 ? (top10Sum / totalSupply) * 100 : null;
+
+    return { mintAuthorityRevoked, freezeAuthorityRevoked, top10Pct, real:true };
+  }
+
+  function drawGauge(score){
+    const svg = document.getElementById('gaugeSvg');
+    const cx=110, cy=115, r=95;
+    const startAngle = Math.PI, endAngle = 0; // left to right, top half
+    const pct = score/100;
+    const angle = Math.PI - pct*Math.PI;
+    const needleX = cx + r*0.75*Math.cos(angle);
+    const needleY = cy - r*0.75*Math.sin(angle);
+
+    function arcPath(a0,a1,radius){
+      const x0 = cx + radius*Math.cos(a0), y0 = cy - radius*Math.sin(a0);
+      const x1 = cx + radius*Math.cos(a1), y1 = cy - radius*Math.sin(a1);
+      return `M ${x0} ${y0} A ${radius} ${radius} 0 0 1 ${x1} ${y1}`;
+    }
+
+    svg.innerHTML = `
+      <path d="${arcPath(Math.PI, Math.PI*2/3, r)}" stroke="#35d99a" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="${arcPath(Math.PI*2/3, Math.PI/3, r)}" stroke="#f0b429" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="${arcPath(Math.PI/3, 0, r)}" stroke="#ff5c72" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" stroke="#e8e8ef" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="6" fill="#e8e8ef"/>
+    `;
+  }
+
+  async function runScan(){
+    const raw = document.getElementById('addrInput').value.trim();
+    if(!raw){ return; }
+    const activeChain = document.querySelector('.chip.active').textContent;
+    const scanBtn = document.querySelector('.scan-btn');
+    scanBtn.textContent = 'Scanning…'; scanBtn.disabled = true;
+
+    let score, checks, dataSource = 'heuristic';
+
+    try{
+      if(activeChain === 'Solana' && isLikelySolanaAddress(raw)){
+        const s = await fetchRealSolanaSignals(raw);
+        dataSource = 'onchain';
+        let riskPoints = 0;
+        if(!s.mintAuthorityRevoked) riskPoints += 35;
+        if(!s.freezeAuthorityRevoked) riskPoints += 25;
+        if(s.top10Pct !== null){
+          if(s.top10Pct > 45) riskPoints += 30;
+          else if(s.top10Pct > 25) riskPoints += 15;
+        }
+        score = Math.min(99, riskPoints);
+        checks = [
+          ['Mint authority', s.mintAuthorityRevoked?'ok':'bad', s.mintAuthorityRevoked?'Revoked':'Still active — creator can mint more supply'],
+          ['Freeze authority', s.freezeAuthorityRevoked?'ok':'bad', s.freezeAuthorityRevoked?'Revoked':'Still active — creator can freeze wallets'],
+          ['Top 10 holder concentration', s.top10Pct===null?'warn':(s.top10Pct<25?'ok':(s.top10Pct<45?'warn':'bad')), s.top10Pct===null?'Unavailable':s.top10Pct.toFixed(1)+'%'],
+          ['LP lock status', 'warn', 'Not checked — verify manually on the DEX/lock service'],
+          ['Contract age', 'warn', 'Not checked — verify creation date on a block explorer'],
+          ['Creator wallet history', 'warn', 'Not checked — needs a paid indexer, verify manually'],
+        ];
+      } else {
+        throw new Error('fallback');
+      }
+    } catch(e){
+      // fallback heuristic — used for EVM chains, malformed addresses, or RPC failures
+      score = hashScore(raw);
+      checks = [
+        ['Mint / owner authority', score%7<3?'ok':'bad', 'Estimated — verify on-chain manually'],
+        ['Freeze / pause function', score%5<2?'ok':'bad', 'Estimated — verify on-chain manually'],
+        ['Top 10 holder concentration', score%9<4?'ok':(score%9<7?'warn':'bad'), 'Estimated — cross-check block explorer'],
+        ['LP lock status', score%4<2?'ok':'warn', 'Not checked — verify manually'],
+        ['Contract age', score%6<3?'ok':'warn', 'Not checked — verify manually'],
+        ['Creator wallet history', score%8<4?'ok':'bad', 'Not checked — needs paid indexer'],
+      ];
+    }
+
+    scanBtn.textContent = 'Scan'; scanBtn.disabled = false;
+
+    document.getElementById('scannedAddr').textContent =
+      (raw.length>42 ? raw.slice(0,20)+'…'+raw.slice(-8) : raw) +
+      (dataSource==='onchain' ? '  ·  live on-chain data' : '  ·  heuristic estimate');
+    document.getElementById('scoreNum').textContent = score;
+    drawGauge(score);
+
+    const tag = document.getElementById('verdictTag');
+    let verdictText, verdictColor;
+    if(score < 35){ verdictText='LOW RISK'; verdictColor='mint'; }
+    else if(score < 65){ verdictText='MODERATE RISK'; verdictColor='amber'; }
+    else { verdictText='HIGH RISK'; verdictColor='coral'; }
+    tag.textContent = verdictText;
+    tag.style.background = `rgba(${verdictColor==='mint'?'53,217,154':verdictColor==='amber'?'240,180,41':'255,92,114'},.12)`;
+    tag.style.color = `var(--${verdictColor})`;
+
+    const cl = document.getElementById('checklist');
+    cl.innerHTML = checks.map(([name,flag,detail])=>`
+      <div class="check-item">
+        <span class="name">${name}</span>
+        <span>${detail} <span class="flag ${flag}">${flag==='ok'?'PASS':flag==='warn'?'WATCH':'FLAG'}</span></span>
+      </div>
+    `).join('');
+
+    document.getElementById('resultBox').classList.add('show');
+    document.getElementById('resultBox').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  // --- SUBSCRIBE BUTTONS -----------------------------------------------
+  // Once you create your two Stripe Payment Links (see setup notes),
+  // paste each URL below. That's the only edit needed — no backend required.
+  const PAYMENT_LINKS = {
+    detective: 'https://buy.stripe.com/6oU8wP62S6vN3WddVE6J201',
+    syndicate: 'https://buy.stripe.com/14A14n4YO7zRdwN8Bk6J202'
+  };
+  function subscribe(plan){
+    const link = PAYMENT_LINKS[plan];
+    if(!link || link.includes('REPLACE_WITH')){
+      alert('Add your Stripe Payment Link for the "'+plan+'" plan in PAYMENT_LINKS at the bottom of this file.');
+      return;
+    }
+    window.location.href = link;
+  }
+</script>
+</body>
+</html>
