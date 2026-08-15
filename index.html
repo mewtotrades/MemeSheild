@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MemeShield — Token Risk Scan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjI0MCIgdmlld0JveD0iMCAwIDI0MCAyNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnM+CiAgICA8Y2xpcFBhdGggaWQ9InNoaWVsZENsaXAiPgogICAgICA8cGF0aCBkPSJNMTIwIDIwIEwxOTUgNTAgTDE5NSAxMjAgQzE5NSAxNjUgMTYzIDIwMCAxMjAgMjIwIEM3NyAyMDAgNDUgMTY1IDQ1IDEyMCBMNDUgNTAgWiIvPgogICAgPC9jbGlwUGF0aD4KICA8L2RlZnM+CgogIDxyZWN0IHdpZHRoPSIyNDAiIGhlaWdodD0iMjQwIiBmaWxsPSIjMDgwODBkIi8+CgogIDxwYXRoIGQ9Ik0xMjAgMjAgTDE5NSA1MCBMMTk1IDEyMCBDMTk1IDE2NSAxNjMgMjAwIDEyMCAyMjAgQzc3IDIwMCA0NSAxNjUgNDUgMTIwIEw0NSA1MCBaIgogICAgICAgIGZpbGw9IiMxNDE0MWYiIHN0cm9rZT0iIzdjNmNmMCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGcgY2xpcC1wYXRoPSJ1cmwoI3NoaWVsZENsaXApIj4KICAgIDxsaW5lIHgxPSI0NSIgeTE9IjcwIiB4Mj0iMTk1IiB5Mj0iNzAiIHN0cm9rZT0iIzIyMjIyZiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgICA8bGluZSB4MT0iNDUiIHkxPSI5NSIgeDI9IjE5NSIgeTI9Ijk1IiBzdHJva2U9IiMyMjIyMmYiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPGxpbmUgeDE9IjQ1IiB5MT0iMTUwIiB4Mj0iMTk1IiB5Mj0iMTUwIiBzdHJva2U9IiMyMjIyMmYiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPGxpbmUgeDE9IjQ1IiB5MT0iMTc1IiB4Mj0iMTk1IiB5Mj0iMTc1IiBzdHJva2U9IiMyMjIyMmYiIHN0cm9rZS13aWR0aD0iMSIvPgogIDwvZz4KICA8cGF0aCBkPSJNODUgMTE4IEwxMTAgMTQzIEwxNTggOTAiCiAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzVkOTlhIiBzdHJva2Utd2lkdGg9IjkiCiAgICAgICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPGNpcmNsZSBjeD0iMTIwIiBjeT0iMTIwIiByPSI0IiBmaWxsPSIjN2M2Y2YwIi8+Cjwvc3ZnPgo=">
+
+<meta property="og:title" content="MemeShield — Token Risk Scan">
+<meta property="og:description" content="Paste any Solana or EVM token address and get an instant rug-pull risk score backed by real on-chain data.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mewtotrades.github.io/MemeSheild/">
+<meta property="og:image" content="https://mewtotrades.github.io/MemeSheild/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MemeShield — Token Risk Scan">
+<meta name="twitter:description" content="Instant rug-pull risk scoring for meme coins, backed by real on-chain checks.">
+<meta name="twitter:image" content="https://mewtotrades.github.io/MemeSheild/og-image.png">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -30,7 +44,6 @@
   }
   a{color:inherit;}
 
-  /* ticker */
   .ticker{
     display:flex; gap:32px; overflow:hidden; white-space:nowrap;
     background:var(--panel); border-bottom:1px solid var(--line);
@@ -38,23 +51,28 @@
   }
   .ticker span.up{color:var(--mint);} .ticker span.down{color:var(--coral);}
 
-  /* header */
   header{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 32px; border-bottom:1px solid var(--line);
   }
   .brand{display:flex; align-items:center; gap:10px; font-family:var(--mono); font-weight:700; letter-spacing:.04em;}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--violet); box-shadow:0 0 12px var(--violet);}
   .badge{font-size:10px; padding:2px 8px; border:1px solid var(--line); border-radius:20px; color:var(--ink-faint); font-family:var(--mono);}
+
+  .auth-status{display:flex; align-items:center; gap:12px; font-family:var(--mono); font-size:12px;}
+  .auth-status .who{color:var(--ink-dim);}
+  .auth-status .plan-tag{padding:2px 9px; border-radius:20px; font-size:10px; font-weight:700; background:rgba(124,108,240,.12); color:var(--violet);}
+  .auth-status .plan-tag.detective{background:rgba(53,217,154,.12); color:var(--mint);}
+  .auth-btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
+    padding:7px 14px; border-radius:6px; font-family:var(--sans); font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .auth-btn.primary{background:var(--violet); border-color:var(--violet); color:#fff;}
+  .auth-btn:hover{opacity:.85;}
 
   main{max-width:1120px; margin:0 auto; padding:48px 24px 100px;}
 
   .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--violet); text-transform:uppercase;}
-  h1{
-    font-family:var(--mono); font-size:clamp(30px,4vw,46px); line-height:1.1; margin:14px 0 10px;
-    font-weight:700;
-  }
-  h1 .strike{color:var(--ink-faint); text-decoration:line-through; font-weight:500;}
+  h1{font-family:var(--mono); font-size:clamp(30px,4vw,46px); line-height:1.1; margin:14px 0 10px; font-weight:700;}
   .sub{color:var(--ink-dim); max-width:640px; line-height:1.6; font-size:14px;}
   .chains{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0;}
   .chip{
@@ -74,14 +92,13 @@
     padding:0 26px; border-radius:8px; cursor:pointer; font-size:14px;
   }
   .scan-btn:hover{background:#8f80ff;}
+  .scan-btn:disabled{background:var(--panel-2); color:var(--ink-faint); cursor:not-allowed;}
 
   .toggle-row{display:flex; align-items:center; gap:8px; margin-top:14px; font-family:var(--mono); font-size:11px; color:var(--ink-faint); cursor:pointer;}
   .toggle-row .car{transition:transform .2s;}
   .toggle-row.open .car{transform:rotate(90deg);}
 
-  .signals{
-    display:none; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px;
-  }
+  .signals{display:none; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px;}
   .signals.open{display:grid;}
   .field label{display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em;}
   .field select{
@@ -89,15 +106,12 @@
     padding:10px; font-family:var(--sans); font-size:13px;
   }
 
-  /* result */
   .result{
     margin-top:40px; border:1px solid var(--line); border-radius:14px; background:var(--panel);
     display:none; overflow:hidden;
   }
   .result.show{display:block;}
-  .result-top{
-    display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--line);
-  }
+  .result-top{display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--line);}
   .result-top .addr{font-family:var(--mono); font-size:12px; color:var(--ink-dim);}
   .verdict-tag{font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:20px; font-weight:700; letter-spacing:.04em;}
 
@@ -117,22 +131,20 @@
   .flag.warn{background:rgba(240,180,41,.12); color:var(--amber);}
   .flag.bad{background:rgba(255,92,114,.12); color:var(--coral);}
 
-  .disclaimer{
-    padding:16px 26px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint); line-height:1.6;
-  }
+  .disclaimer{padding:16px 26px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint); line-height:1.6;}
 
-  /* pricing */
-  .pricing-head{margin-top:90px; text-align:center;}
-  .pricing-head h2{font-family:var(--mono); font-size:28px; margin-bottom:8px;}
-  .pricing-head p{color:var(--ink-dim); font-size:13.5px;}
+  .section-head{margin-top:90px; text-align:center;}
+  .section-head h2{font-family:var(--mono); font-size:28px; margin-bottom:8px;}
+  .section-head p{color:var(--ink-dim); font-size:13.5px;}
+
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:32px;}
+  @media(max-width:800px){.steps{grid-template-columns:1fr;} .tiers{grid-template-columns:1fr;} .gauge-wrap{flex-direction:column;}}
+  .step-card{border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:22px;}
+  .step-card .num{font-family:var(--mono); color:var(--violet); font-weight:700; font-size:13px; margin-bottom:8px;}
+  .step-card p{color:var(--ink-dim); font-size:13px; line-height:1.6; margin:0;}
 
   .tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:32px;}
-  @media(max-width:800px){.tiers{grid-template-columns:1fr;} .gauge-wrap{flex-direction:column;}}
-
-  .tier{
-    border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:26px;
-    display:flex; flex-direction:column; gap:14px;
-  }
+  .tier{border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:26px; display:flex; flex-direction:column; gap:14px;}
   .tier.featured{border-color:var(--violet); background:linear-gradient(180deg, rgba(124,108,240,.08), var(--panel) 40%); position:relative;}
   .tier.featured::before{
     content:'MOST USED'; position:absolute; top:-11px; left:50%; transform:translateX(-50%);
@@ -151,7 +163,52 @@
   .tier.featured .tier-btn{background:var(--violet); border-color:var(--violet); color:#fff;}
   .tier-btn:hover{opacity:.85;}
 
+  .history-list{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .history-item{
+    display:flex; justify-content:space-between; padding:10px 14px; background:var(--panel-2);
+    border:1px solid var(--line); border-radius:8px; font-family:var(--mono); font-size:12px; color:var(--ink-dim);
+  }
+
+  .privacy-note{
+    margin-top:70px; padding:20px 24px; border:1px solid var(--line); border-radius:12px;
+    background:var(--panel); font-size:12.5px; color:var(--ink-dim); line-height:1.7;
+  }
+  .privacy-note strong{color:var(--ink);}
+
   footer{text-align:center; color:var(--ink-faint); font-size:11px; padding:40px 0 10px; font-family:var(--mono);}
+
+  /* auth modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.7); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:32px;
+    width:100%; max-width:380px;
+  }
+  .modal h2{font-family:var(--mono); font-size:19px; margin:0 0 6px;}
+  .modal .modal-sub{color:var(--ink-faint); font-size:12px; margin-bottom:22px; line-height:1.5;}
+  .modal label{display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+  .modal input{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:11px 13px; color:var(--ink); font-family:var(--sans); font-size:13.5px; margin-bottom:16px;
+  }
+  .modal input:focus{outline:none; border-color:var(--violet);}
+  .modal-btn{
+    width:100%; background:var(--violet); border:none; color:#fff; font-weight:700;
+    padding:12px; border-radius:8px; cursor:pointer; font-size:14px; margin-top:4px;
+  }
+  .modal-btn:hover{background:#8f80ff;}
+  .modal-switch{text-align:center; margin-top:18px; font-size:12.5px; color:var(--ink-faint);}
+  .modal-switch a{color:var(--violet); cursor:pointer; text-decoration:underline;}
+  .modal-error{color:var(--coral); font-size:12px; margin-bottom:14px; display:none;}
+  .modal-error.show{display:block;}
+  .passkey-reveal{
+    background:var(--panel-2); border:1px dashed var(--amber); border-radius:8px; padding:16px;
+    font-family:var(--mono); font-size:15px; text-align:center; color:var(--amber); margin-bottom:16px; letter-spacing:.05em;
+  }
+  .passkey-warn{font-size:11.5px; color:var(--ink-faint); line-height:1.6; margin-bottom:18px;}
 </style>
 </head>
 <body>
@@ -159,8 +216,19 @@
   <div class="ticker" id="ticker"></div>
 
   <header>
-    <div class="brand"><span class="dot"></span> MEMESHIELD <span class="badge">LIVE SCAN</span></div>
-    <div class="badge" id="clock"></div>
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 240 240" style="flex-shrink:0;">
+        <path d="M120 20 L195 50 L195 120 C195 165 163 200 120 220 C77 200 45 165 45 120 L45 50 Z"
+              fill="#14141f" stroke="#7c6cf0" stroke-width="6"/>
+        <path d="M85 118 L110 143 L158 90"
+              fill="none" stroke="#35d99a" stroke-width="16"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      MEMESHIELD <span class="badge">LIVE SCAN</span>
+    </div>
+    <div class="auth-status" id="authStatus">
+      <button class="auth-btn primary" onclick="openAuthModal('login')">Log in</button>
+    </div>
   </header>
 
   <main>
@@ -172,8 +240,9 @@
 
     <div class="scan-row">
       <input class="scan-input" id="addrInput" placeholder="Paste contract address or token link…">
-      <button class="scan-btn" onclick="runScan()">Scan</button>
+      <button class="scan-btn" id="scanBtn" onclick="handleScanClick()">Scan</button>
     </div>
+    <div id="scanLimitNote" style="font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:8px;"></div>
 
     <div class="toggle-row" id="toggleSignals" onclick="toggleSig()">
       <span class="car">▸</span> Add creator / social signals (optional, improves accuracy)
@@ -203,11 +272,25 @@
       </div>
     </div>
 
-    <div class="pricing-head">
-      <h2>Unlock the full case file</h2>
-      <p>Free scans show the headline score. Subscribers get the full evidence trail, alerts, and API access.</p>
+    <div id="historySection" style="display:none;">
+      <div class="section-head" style="margin-top:60px;"><h2 style="font-size:20px;" id="historyHeading">Your recent scans</h2></div>
+      <div class="history-list" id="historyList"></div>
     </div>
 
+    <div class="section-head">
+      <h2>How it works</h2>
+      <p style="max-width:560px; margin:0 auto;">Three steps, no wallet connection needed.</p>
+    </div>
+    <div class="steps">
+      <div class="step-card"><div class="num">01</div><p>Paste a meme coin or token address, or a link from pump.fun / DexScreener / any explorer.</p></div>
+      <div class="step-card"><div class="num">02</div><p>MemeShield checks real on-chain data — mint authority, freeze authority, and holder concentration — for warning signs.</p></div>
+      <div class="step-card"><div class="num">03</div><p>Review the score and evidence checklist, then decide if the token deserves further research before you buy.</p></div>
+    </div>
+
+    <div class="section-head">
+      <h2>Unlock the full case file</h2>
+      <p>Free accounts get 5 scans a day. Detective removes the limit and unlocks the full evidence trail.</p>
+    </div>
     <div class="tiers">
       <div class="tier">
         <h3>SCOUT</h3>
@@ -217,7 +300,7 @@
           <li>Headline risk score</li>
           <li>Solana + EVM detection</li>
         </ul>
-        <button class="tier-btn" onclick="subscribe('scout')">Current plan</button>
+        <button class="tier-btn" id="scoutBtn">Free plan</button>
       </div>
       <div class="tier featured">
         <h3>DETECTIVE</h3>
@@ -226,7 +309,7 @@
           <li>Unlimited scans</li>
           <li>Full evidence checklist</li>
           <li>Holder-concentration on EVM</li>
-          <li>Watchlist + Telegram alerts</li>
+          <li>Persistent scan history</li>
         </ul>
         <button class="tier-btn" onclick="subscribe('detective')">Subscribe</button>
       </div>
@@ -243,29 +326,96 @@
       </div>
     </div>
 
+    <div class="privacy-note">
+      <strong>Privacy note.</strong> Payments are processed securely by Stripe — MemeShield never sees or stores your full card details. Your account only stores your username, a securely hashed password, your subscription status, and your scan history so the free-plan limit and Detective features work correctly.
+    </div>
+
+    <div style="text-align:center; margin-top:40px; padding-top:24px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-faint);">
+      Questions, bugs, or account/subscription issues? Contact <a href="mailto:contact@YOURDOMAIN.example" style="color:var(--violet);">contact@YOURDOMAIN.example</a>
+    </div>
+
   </main>
 
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="authOverlay">
+    <div class="modal">
+
+      <div id="loginView">
+        <h2>Log in</h2>
+        <div class="modal-sub">Welcome back to MemeShield.</div>
+        <div class="modal-error" id="loginError"></div>
+        <label>Username</label>
+        <input id="loginUsername" autocomplete="username">
+        <label>Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password">
+        <button class="modal-btn" onclick="doLogin()">Log in</button>
+        <div class="modal-switch">
+          <a onclick="switchView('signup')">Create an account</a> · <a onclick="switchView('forgot')">Forgot password?</a>
+        </div>
+      </div>
+
+      <div id="signupView" style="display:none;">
+        <h2>Create account</h2>
+        <div class="modal-sub">Username + password only — no email, no phone.</div>
+        <div class="modal-error" id="signupError"></div>
+        <label>Username</label>
+        <input id="signupUsername" autocomplete="username">
+        <label>Password (8+ characters)</label>
+        <input id="signupPassword" type="password" autocomplete="new-password">
+        <button class="modal-btn" onclick="doSignup()">Create account</button>
+        <div class="modal-switch"><a onclick="switchView('login')">Already have an account? Log in</a></div>
+      </div>
+
+      <div id="passkeyView" style="display:none;">
+        <h2>Save your passkey</h2>
+        <div class="passkey-reveal" id="passkeyDisplay"></div>
+        <div class="passkey-warn">
+          This is the <strong style="color:var(--ink);">only</strong> way to recover your account if you forget your password — MemeShield has no email or phone number on file to reset it another way. Write it down somewhere safe. It will not be shown again.
+        </div>
+        <button class="modal-btn" onclick="finishSignupFlow()">I've saved it — continue</button>
+      </div>
+
+      <div id="forgotView" style="display:none;">
+        <h2>Reset password</h2>
+        <div class="modal-sub">Enter your username and your saved passkey.</div>
+        <div class="modal-error" id="forgotError"></div>
+        <label>Username</label>
+        <input id="forgotUsername" autocomplete="username">
+        <label>Passkey</label>
+        <input id="forgotPasskey">
+        <label>New password (8+ characters)</label>
+        <input id="forgotNewPassword" type="password">
+        <button class="modal-btn" onclick="doPasswordReset()">Reset password</button>
+        <div class="modal-switch"><a onclick="switchView('login')">Back to log in</a></div>
+      </div>
+
+    </div>
+  </div>
+
 <script>
-  // ticker
-  const tickerData = [
-    ['SOL','$74.73',2.82],['ETH','$1,914.38',0.79],['BTC','$64,560.77',0.91]
-  ];
-  const tickerEl = document.getElementById('ticker');
-  let html='';
-  for(let i=0;i<4;i++){
-    tickerData.forEach(([s,p,c])=>{
-      html += `<span>${s} ${p} <span class="${c>=0?'up':'down'}">${c>=0?'+':''}${c}%</span></span>`;
-    });
-  }
-  tickerEl.innerHTML = html;
+  // ============================================================
+  // SUPABASE SETUP — paste your project's URL + anon key here.
+  // Get these from your Supabase project → Settings → API.
+  // ============================================================
+  const SUPABASE_URL = 'https://bzcqibafanbwhvbrboct.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_Pt9zhmtGzlg4wMlU7n-XhQ_zuNFgoT1';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // clock
-  function tick(){
-    document.getElementById('clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  }
-  tick(); setInterval(tick,1000*30);
+  const PAYMENT_LINKS = {
+    detective: 'https://buy.stripe.com/6oU8wP62S6vN3WddVE6J201',
+    syndicate: 'https://buy.stripe.com/14A14n4YO7zRdwN8Bk6J202'
+  };
 
-  // chains
+  let currentUser = null;
+  let currentProfile = null;
+  let pendingSignup = null; // holds {username, password, passkey} between signup and passkey-confirm steps
+
+  // ---- ticker ----
+  const tickerData = [['SOL','$74.73',2.82],['ETH','$1,914.38',0.79],['BTC','$64,560.77',0.91]];
+  let th=''; for(let i=0;i<4;i++){ tickerData.forEach(([s,p,c])=>{ th += `<span>${s} ${p} <span class="${c>=0?'up':'down'}">${c>=0?'+':''}${c}%</span></span>`; }); }
+  document.getElementById('ticker').innerHTML = th;
+
+  // ---- chain chips ----
   const chains = ['Solana','Ethereum','Base','BNB Chain','Arbitrum','Polygon','Avalanche','Optimism'];
   const chainsEl = document.getElementById('chains');
   chains.forEach((c,i)=>{
@@ -281,15 +431,240 @@
     document.getElementById('sigPanel').classList.toggle('open');
   }
 
-  // deterministic pseudo-score from address string — used ONLY as a fallback
-  // when real chain data can't be fetched (wrong chain, bad address, RPC hiccup, etc.)
+  // ============================================================
+  // AUTH — username-only accounts, built on Supabase (which needs
+  // an email internally, so we transparently use username@memeshield.local)
+  // ============================================================
+  function usernameToEmail(u){ return `${u.trim().toLowerCase()}@memeshield.local`; }
+
+  function openAuthModal(view){
+    document.getElementById('authOverlay').classList.add('show');
+    switchView(view);
+  }
+  function closeAuthModal(){
+    document.getElementById('authOverlay').classList.remove('show');
+  }
+  function switchView(view){
+    ['login','signup','passkey','forgot'].forEach(v=>{
+      document.getElementById(v+'View').style.display = (v===view) ? 'block' : 'none';
+    });
+  }
+  function showError(id, msg){
+    const el = document.getElementById(id);
+    el.textContent = msg; el.classList.add('show');
+  }
+  function clearError(id){
+    const el = document.getElementById(id);
+    el.classList.remove('show');
+  }
+
+  function generatePasskey(){
+    const bytes = crypto.getRandomValues(new Uint8Array(10));
+    return Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase().match(/.{1,4}/g).join('-');
+  }
+
+  async function doSignup(){
+    clearError('signupError');
+    const username = document.getElementById('signupUsername').value.trim();
+    const password = document.getElementById('signupPassword').value;
+
+    if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
+      showError('signupError', 'Username must be 3-20 characters, letters/numbers/underscore only.');
+      return;
+    }
+    if(password.length < 8){
+      showError('signupError', 'Password must be at least 8 characters.');
+      return;
+    }
+
+    const { data, error } = await sb.auth.signUp({
+      email: usernameToEmail(username),
+      password
+    });
+
+    if(error){
+      showError('signupError', error.message.includes('already') ? 'That username is taken.' : error.message);
+      return;
+    }
+
+    // create profile row + passkey
+    const passkey = generatePasskey();
+    await sb.from('profiles').insert({ id: data.user.id, username: username.toLowerCase() });
+    await sb.rpc('set_passkey', { new_passkey: passkey });
+
+    document.getElementById('passkeyDisplay').textContent = passkey;
+    switchView('passkey');
+  }
+
+  function finishSignupFlow(){
+    closeAuthModal();
+    refreshSession();
+  }
+
+  async function doLogin(){
+    clearError('loginError');
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    const { error } = await sb.auth.signInWithPassword({
+      email: usernameToEmail(username),
+      password
+    });
+
+    if(error){
+      showError('loginError', 'Incorrect username or password.');
+      return;
+    }
+    closeAuthModal();
+    refreshSession();
+  }
+
+  async function doLogout(){
+    await sb.auth.signOut();
+    refreshSession();
+  }
+
+  async function doPasswordReset(){
+    clearError('forgotError');
+    const username = document.getElementById('forgotUsername').value.trim();
+    const passkey = document.getElementById('forgotPasskey').value.trim();
+    const newPassword = document.getElementById('forgotNewPassword').value;
+
+    if(newPassword.length < 8){
+      showError('forgotError', 'New password must be at least 8 characters.');
+      return;
+    }
+
+    // Calls the reset-password Edge Function (see setup notes) —
+    // verifies the passkey server-side and resets the password.
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username.toLowerCase(), passkey, newPassword })
+    });
+    const result = await res.json();
+
+    if(!res.ok){
+      showError('forgotError', result.error || 'Invalid username or passkey.');
+      return;
+    }
+    switchView('login');
+    clearError('loginError');
+    showError('loginError', 'Password reset — log in with your new password.');
+    document.getElementById('loginError').style.color = 'var(--mint)';
+  }
+
+  async function refreshSession(){
+    const { data: { session } } = await sb.auth.getSession();
+    currentUser = session ? session.user : null;
+
+    const authStatusEl = document.getElementById('authStatus');
+
+    if(!currentUser){
+      currentProfile = null;
+      authStatusEl.innerHTML = `<button class="auth-btn primary" onclick="openAuthModal('login')">Log in</button>`;
+      document.getElementById('historySection').style.display = 'none';
+      updateScanLimitNote(0, 5, 'free');
+      return;
+    }
+
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = profile;
+
+    authStatusEl.innerHTML = `
+      <span class="who">@${profile.username}</span>
+      <span class="plan-tag ${profile.subscription}">${profile.subscription === 'detective' ? 'DETECTIVE' : 'FREE'}</span>
+      <button class="auth-btn" onclick="doLogout()">Log out</button>
+    `;
+
+    await refreshScanStatus();
+    await loadHistory();
+    document.getElementById('historySection').style.display = 'block';
+  }
+
+  async function refreshScanStatus(){
+    if(!currentUser){ updateScanLimitNote(0, 5, 'free'); return; }
+    const { data: usedToday } = await sb.rpc('scans_used_today');
+    updateScanLimitNote(usedToday || 0, 5, currentProfile.subscription);
+  }
+
+  function updateScanLimitNote(used, limit, plan){
+    const note = document.getElementById('scanLimitNote');
+    const scanBtn = document.getElementById('scanBtn');
+
+    if(!currentUser){
+      note.textContent = 'Log in to start scanning — free accounts get 5 scans a day.';
+      note.style.color = 'var(--ink-faint)';
+      scanBtn.disabled = false; // login modal opens on click instead
+      return;
+    }
+    if(plan === 'detective'){
+      note.textContent = 'Detective plan — unlimited scans.';
+      note.style.color = 'var(--mint)';
+      scanBtn.disabled = false;
+      return;
+    }
+    const remaining = Math.max(0, limit - used);
+    if(remaining > 0){
+      note.textContent = `${remaining} of ${limit} free scans left today · Detective removes this limit`;
+      note.style.color = 'var(--ink-faint)';
+      scanBtn.disabled = false;
+    } else {
+      note.textContent = `You've reached your 5 free scans for today. Upgrade to Detective for unlimited scans.`;
+      note.style.color = 'var(--amber)';
+      scanBtn.disabled = true;
+    }
+  }
+
+  async function loadHistory(){
+    document.getElementById('historyHeading').textContent =
+      currentProfile.subscription === 'detective' ? 'Your scan history' : "Today's scans";
+    let query = sb.from('scans').select('*').order('created_at', { ascending: false });
+    if(currentProfile.subscription !== 'detective'){
+      // free plan: history limited to today's scans only
+      const startOfDay = new Date();
+      startOfDay.setHours(0,0,0,0);
+      query = query.gte('created_at', startOfDay.toISOString());
+    } else {
+      query = query.limit(50);
+    }
+    const { data: scans } = await query;
+    const list = document.getElementById('historyList');
+    if(!scans || scans.length === 0){
+      list.innerHTML = `<div class="history-item"><span>No scans yet${currentProfile.subscription !== 'detective' ? ' today' : ''}</span></div>`;
+      return;
+    }
+    list.innerHTML = scans.map(s => `
+      <div class="history-item">
+        <span>${s.address.length>28 ? s.address.slice(0,14)+'…'+s.address.slice(-8) : s.address} · ${s.chain}</span>
+        <span>Score ${s.score} · ${s.verdict}</span>
+      </div>
+    `).join('');
+  }
+
+  // ---- Stripe subscribe buttons: tag the checkout with this account's ID ----
+  function subscribe(plan){
+    if(!currentUser){
+      openAuthModal('signup');
+      return;
+    }
+    const link = PAYMENT_LINKS[plan];
+    if(!link || link.includes('REPLACE_WITH')){
+      alert('Add your Stripe Payment Link for the "'+plan+'" plan in PAYMENT_LINKS.');
+      return;
+    }
+    window.location.href = `${link}?client_reference_id=${currentUser.id}`;
+  }
+
+  // ============================================================
+  // SCANNING LOGIC (on-chain checks unchanged; gated + counted via Supabase)
+  // ============================================================
   function hashScore(str){
     let h = 0;
     for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
     return h % 100;
   }
 
-  // ---- REAL Solana on-chain checks (public RPC, no API key needed) ----
   const SOL_RPC = 'https://api.mainnet-beta.solana.com';
   async function rpc(method, params){
     const res = await fetch(SOL_RPC, {
@@ -300,13 +675,9 @@
     if(data.error) throw new Error(data.error.message);
     return data.result;
   }
-
-  function isLikelySolanaAddress(str){
-    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(str);
-  }
+  function isLikelySolanaAddress(str){ return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(str); }
 
   async function fetchRealSolanaSignals(mint){
-    // 1. Mint account: reveals mint authority + freeze authority
     const acct = await rpc('getAccountInfo', [mint, {encoding:'jsonParsed'}]);
     if(!acct || !acct.value || !acct.value.data || !acct.value.data.parsed){
       throw new Error('Not a recognizable SPL token mint');
@@ -314,8 +685,6 @@
     const info = acct.value.data.parsed.info;
     const mintAuthorityRevoked = info.mintAuthority === null;
     const freezeAuthorityRevoked = info.freezeAuthority === null;
-
-    // 2. Top holders vs total supply -> concentration
     const [largest, supply] = await Promise.all([
       rpc('getTokenLargestAccounts', [mint]),
       rpc('getTokenSupply', [mint])
@@ -324,25 +693,21 @@
     const top10Sum = (largest.value || []).slice(0,10)
       .reduce((sum, a) => sum + parseFloat(a.uiAmountString || a.uiAmount || 0), 0);
     const top10Pct = totalSupply > 0 ? (top10Sum / totalSupply) * 100 : null;
-
-    return { mintAuthorityRevoked, freezeAuthorityRevoked, top10Pct, real:true };
+    return { mintAuthorityRevoked, freezeAuthorityRevoked, top10Pct };
   }
 
   function drawGauge(score){
     const svg = document.getElementById('gaugeSvg');
     const cx=110, cy=115, r=95;
-    const startAngle = Math.PI, endAngle = 0; // left to right, top half
     const pct = score/100;
     const angle = Math.PI - pct*Math.PI;
     const needleX = cx + r*0.75*Math.cos(angle);
     const needleY = cy - r*0.75*Math.sin(angle);
-
     function arcPath(a0,a1,radius){
       const x0 = cx + radius*Math.cos(a0), y0 = cy - radius*Math.sin(a0);
       const x1 = cx + radius*Math.cos(a1), y1 = cy - radius*Math.sin(a1);
       return `M ${x0} ${y0} A ${radius} ${radius} 0 0 1 ${x1} ${y1}`;
     }
-
     svg.innerHTML = `
       <path d="${arcPath(Math.PI, Math.PI*2/3, r)}" stroke="#35d99a" stroke-width="14" fill="none" stroke-linecap="round"/>
       <path d="${arcPath(Math.PI*2/3, Math.PI/3, r)}" stroke="#f0b429" stroke-width="14" fill="none" stroke-linecap="round"/>
@@ -352,15 +717,20 @@
     `;
   }
 
+  function handleScanClick(){
+    if(!currentUser){ openAuthModal('login'); return; }
+    runScan();
+  }
+
   async function runScan(){
     const raw = document.getElementById('addrInput').value.trim();
     if(!raw){ return; }
+
     const activeChain = document.querySelector('.chip.active').textContent;
-    const scanBtn = document.querySelector('.scan-btn');
+    const scanBtn = document.getElementById('scanBtn');
     scanBtn.textContent = 'Scanning…'; scanBtn.disabled = true;
 
     let score, checks, dataSource = 'heuristic';
-
     try{
       if(activeChain === 'Solana' && isLikelySolanaAddress(raw)){
         const s = await fetchRealSolanaSignals(raw);
@@ -381,11 +751,8 @@
           ['Contract age', 'warn', 'Not checked — verify creation date on a block explorer'],
           ['Creator wallet history', 'warn', 'Not checked — needs a paid indexer, verify manually'],
         ];
-      } else {
-        throw new Error('fallback');
-      }
+      } else { throw new Error('fallback'); }
     } catch(e){
-      // fallback heuristic — used for EVM chains, malformed addresses, or RPC failures
       score = hashScore(raw);
       checks = [
         ['Mint / owner authority', score%7<3?'ok':'bad', 'Estimated — verify on-chain manually'],
@@ -397,7 +764,25 @@
       ];
     }
 
+    let verdictText = score < 35 ? 'LOW RISK' : (score < 65 ? 'MODERATE RISK' : 'HIGH RISK');
+
+    // THE REAL LIMIT ENFORCEMENT: this insert is rejected by the database
+    // itself (via Row Level Security) if a free user already has 5 scans today.
+    const { error: insertError } = await sb.from('scans').insert({
+      user_id: currentUser.id,
+      address: raw,
+      chain: activeChain,
+      score,
+      verdict: verdictText
+    });
+
     scanBtn.textContent = 'Scan'; scanBtn.disabled = false;
+
+    if(insertError){
+      await refreshScanStatus();
+      alert("You've reached your 5 free scans for today. Upgrade to Detective for unlimited scans.");
+      return;
+    }
 
     document.getElementById('scannedAddr').textContent =
       (raw.length>42 ? raw.slice(0,20)+'…'+raw.slice(-8) : raw) +
@@ -406,41 +791,29 @@
     drawGauge(score);
 
     const tag = document.getElementById('verdictTag');
-    let verdictText, verdictColor;
-    if(score < 35){ verdictText='LOW RISK'; verdictColor='mint'; }
-    else if(score < 65){ verdictText='MODERATE RISK'; verdictColor='amber'; }
-    else { verdictText='HIGH RISK'; verdictColor='coral'; }
+    const verdictColor = score < 35 ? 'mint' : (score < 65 ? 'amber' : 'coral');
     tag.textContent = verdictText;
     tag.style.background = `rgba(${verdictColor==='mint'?'53,217,154':verdictColor==='amber'?'240,180,41':'255,92,114'},.12)`;
     tag.style.color = `var(--${verdictColor})`;
 
     const cl = document.getElementById('checklist');
     cl.innerHTML = checks.map(([name,flag,detail])=>`
-      <div class="check-item">
-        <span class="name">${name}</span>
-        <span>${detail} <span class="flag ${flag}">${flag==='ok'?'PASS':flag==='warn'?'WATCH':'FLAG'}</span></span>
-      </div>
+      <div class="check-item"><span class="name">${name}</span>
+      <span>${detail} <span class="flag ${flag}">${flag==='ok'?'PASS':flag==='warn'?'WATCH':'FLAG'}</span></span></div>
     `).join('');
 
     document.getElementById('resultBox').classList.add('show');
     document.getElementById('resultBox').scrollIntoView({behavior:'smooth', block:'nearest'});
+
+    await refreshScanStatus();
+    await loadHistory();
   }
 
-  // --- SUBSCRIBE BUTTONS -----------------------------------------------
-  // Once you create your two Stripe Payment Links (see setup notes),
-  // paste each URL below. That's the only edit needed — no backend required.
-  const PAYMENT_LINKS = {
-    detective: 'https://buy.stripe.com/6oU8wP62S6vN3WddVE6J201',
-    syndicate: 'https://buy.stripe.com/14A14n4YO7zRdwN8Bk6J202'
-  };
-  function subscribe(plan){
-    const link = PAYMENT_LINKS[plan];
-    if(!link || link.includes('REPLACE_WITH')){
-      alert('Add your Stripe Payment Link for the "'+plan+'" plan in PAYMENT_LINKS at the bottom of this file.');
-      return;
-    }
-    window.location.href = link;
-  }
+  function tick(){}
+
+  // ---- boot ----
+  refreshSession();
+  sb.auth.onAuthStateChange(() => refreshSession());
 </script>
 </body>
 </html>
