@@ -74,6 +74,22 @@
   .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--violet); text-transform:uppercase;}
   h1{font-family:var(--mono); font-size:clamp(30px,4vw,46px); line-height:1.1; margin:14px 0 10px; font-weight:700;}
   .sub{color:var(--ink-dim); max-width:640px; line-height:1.6; font-size:14px;}
+  .trust-row{
+    display:flex; align-items:center; gap:8px; margin-top:16px;
+    font-family:var(--mono); font-size:12px; color:var(--ink-faint);
+  }
+  .trust-dot{width:7px; height:7px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); flex-shrink:0;}
+
+  .activity-feed{margin-top:60px; border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:20px;}
+  .activity-feed-title{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px;}
+  .activity-item{
+    display:flex; justify-content:space-between; align-items:center; padding:9px 0;
+    border-bottom:1px solid var(--line); font-family:var(--mono); font-size:12px; color:var(--ink-dim);
+  }
+  .activity-item:last-child{border-bottom:none;}
+  .activity-item .a-verdict{font-weight:700;}
+  .activity-item .a-time{color:var(--ink-faint); font-size:11px;}
+
   .chains{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0;}
   .chip{
     font-family:var(--mono); font-size:11px; padding:6px 12px; border-radius:6px;
@@ -108,12 +124,27 @@
 
   .result{
     margin-top:40px; border:1px solid var(--line); border-radius:14px; background:var(--panel);
-    display:none; overflow:hidden;
+    display:none; overflow:hidden; transition:border-color .3s;
   }
-  .result.show{display:block;}
+  .result.show{display:block; animation:resultReveal .4s ease-out;}
+  .result.verdict-mint{border-color:rgba(53,217,154,.4);}
+  .result.verdict-amber{border-color:rgba(240,180,41,.4);}
+  .result.verdict-coral{border-color:rgba(255,92,114,.4);}
+  @keyframes resultReveal{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .score-num{transition:color .3s;}
   .result-top{display:flex; justify-content:space-between; align-items:center; padding:20px 26px; border-bottom:1px solid var(--line);}
   .result-top .addr{font-family:var(--mono); font-size:12px; color:var(--ink-dim);}
   .verdict-tag{font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:20px; font-weight:700; letter-spacing:.04em;}
+  .share-btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--ink-dim);
+    font-family:var(--mono); font-size:11px; padding:5px 12px; border-radius:20px; cursor:pointer;
+  }
+  .share-btn:hover{border-color:var(--violet); color:var(--violet);}
+  .share-btn.copied{border-color:var(--mint); color:var(--mint);}
+  .share-btn.watching{border-color:var(--amber); color:var(--amber);}
 
   .gauge-wrap{display:flex; gap:40px; padding:30px 26px; align-items:center; flex-wrap:wrap;}
   .gauge{position:relative; width:220px; height:130px;}
@@ -130,6 +161,12 @@
   .flag.ok{background:rgba(53,217,154,.12); color:var(--mint);}
   .flag.warn{background:rgba(240,180,41,.12); color:var(--amber);}
   .flag.bad{background:rgba(255,92,114,.12); color:var(--coral);}
+  .check-item.locked{position:relative; overflow:hidden;}
+  .check-item.locked .locked-overlay{
+    position:absolute; inset:0; background:rgba(15,15,24,.88); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+  }
 
   .disclaimer{padding:16px 26px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint); line-height:1.6;}
 
@@ -174,6 +211,20 @@
     background:var(--panel); font-size:12.5px; color:var(--ink-dim); line-height:1.7;
   }
   .privacy-note strong{color:var(--ink);}
+
+  .faq{max-width:720px; margin:32px auto 0; display:flex; flex-direction:column; gap:10px;}
+  .faq-item{border:1px solid var(--line); border-radius:10px; background:var(--panel); overflow:hidden;}
+  .faq-q{
+    padding:16px 20px; cursor:pointer; font-size:14px; font-weight:600; color:var(--ink);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .faq-car{color:var(--violet); font-family:var(--mono); transition:transform .2s; flex-shrink:0; margin-left:12px;}
+  .faq-item.open .faq-car{transform:rotate(90deg);}
+  .faq-a{
+    max-height:0; overflow:hidden; transition:max-height .25s ease, padding .25s ease;
+    padding:0 20px; font-size:13px; color:var(--ink-dim); line-height:1.6;
+  }
+  .faq-item.open .faq-a{max-height:300px; padding:0 20px 18px;}
 
   footer{text-align:center; color:var(--ink-faint); font-size:11px; padding:40px 0 10px; font-family:var(--mono);}
 
@@ -236,6 +287,11 @@
     <h1>MemeShield</h1>
     <p class="sub">Paste a link from pump.fun, Axiom, DexScreener, Uniswap, or any block explorer — or a raw contract address. Chain is auto-detected. This tool weighs on-chain structure, not intent — it does not replace your own judgment.</p>
 
+    <div class="trust-row" id="trustRow" style="display:none;">
+      <span class="trust-dot"></span>
+      <span id="trustCounterText"></span>
+    </div>
+
     <div class="chains" id="chains"></div>
 
     <div class="scan-row">
@@ -257,7 +313,11 @@
     <div class="result" id="resultBox">
       <div class="result-top">
         <div class="addr" id="scannedAddr"></div>
-        <div class="verdict-tag" id="verdictTag"></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="verdict-tag" id="verdictTag"></div>
+          <button class="share-btn" id="watchlistBtn" onclick="toggleWatchlist()" style="display:none;">☆ Watch</button>
+          <button class="share-btn" id="shareBtn" onclick="shareResult()">Share ↗</button>
+        </div>
       </div>
       <div class="gauge-wrap">
         <div>
@@ -275,6 +335,11 @@
     <div id="historySection" style="display:none;">
       <div class="section-head" style="margin-top:60px;"><h2 style="font-size:20px;" id="historyHeading">Your recent scans</h2></div>
       <div class="history-list" id="historyList"></div>
+    </div>
+
+    <div class="activity-feed" id="activityFeed" style="display:none;">
+      <div class="activity-feed-title">Live activity</div>
+      <div id="activityFeedList"></div>
     </div>
 
     <div class="section-head">
@@ -302,6 +367,18 @@
         </ul>
         <button class="tier-btn" id="scoutBtn">Free plan</button>
       </div>
+      <div class="tier">
+        <h3>BOOST PASS</h3>
+        <div class="price">$15<span> one-time</span></div>
+        <ul>
+          <li>25 scans every 24 hours</li>
+          <li>Full evidence checklist</li>
+          <li>Holder-concentration on EVM</li>
+          <li>Persistent scan history</li>
+          <li>No subscription — pay once</li>
+        </ul>
+        <button class="tier-btn" onclick="subscribe('boost')">Buy once</button>
+      </div>
       <div class="tier featured">
         <h3>DETECTIVE</h3>
         <div class="price">$10<span>/mo</span></div>
@@ -310,8 +387,7 @@
           <li>Full evidence checklist</li>
           <li>Holder-concentration on EVM</li>
           <li>Persistent scan history</li>
-        </ul>
-        <button class="tier-btn" onclick="subscribe('detective')">Subscribe</button>
+        </ul>  <button class="tier-btn" onclick="subscribe('detective')">Subscribe</button>
       </div>
       <div class="tier">
         <h3>SYNDICATE</h3>
@@ -323,6 +399,32 @@
           <li>Priority support</li>
         </ul>
         <button class="tier-btn" onclick="subscribe('syndicate')">Subscribe</button>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>Frequently asked</h2>
+    </div>
+    <div class="faq" id="faqList">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Is this financial advice? <span class="faq-car">▸</span></div>
+        <div class="faq-a">No. MemeShield scores on-chain structure — things like mint authority, freeze authority, and holder concentration — that correlate with past rug pulls. It can't see a creator's intent or private off-chain plans. A low score is not a safety guarantee, and this isn't a recommendation to buy or avoid anything. Always do your own research and never risk more than you can afford to lose.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">How accurate is the score? <span class="faq-car">▸</span></div>
+        <div class="faq-a">Solana scans pull real, live on-chain data directly from the blockchain — mint authority, freeze authority, and actual holder concentration. EVM chains (Ethereum, Base, etc.) currently use a lighter heuristic estimate, since deep holder-concentration data there needs a paid indexer we haven't connected yet. We label which type of result you're looking at on every scan.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">What happens to my data? <span class="faq-car">▸</span></div>
+        <div class="faq-a">Your account stores only your username, a securely hashed password, your subscription status, and your scan history — enough to make the free-plan limit and paid features work. Payments are handled entirely by Stripe; MemeShield never sees or stores your full card details.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Can I get a refund? <span class="faq-car">▸</span></div>
+        <div class="faq-a">Reach out through the contact link in the footer and we'll take a look at your situation.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Why do I need an account to scan? <span class="faq-car">▸</span></div>
+        <div class="faq-a">Accounts let us enforce the free daily scan limit fairly and let you keep a history of what you've checked. No email or phone number required — just a username, password, and a one-time recovery passkey.</div>
       </div>
     </div>
 
@@ -402,12 +504,14 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const PAYMENT_LINKS = {
+    boost: 'https://buy.stripe.com/REPLACE_WITH_YOUR_BOOST_LINK',
     detective: 'https://buy.stripe.com/6oU8wP62S6vN3WddVE6J201',
     syndicate: 'https://buy.stripe.com/14A14n4YO7zRdwN8Bk6J202'
   };
 
   let currentUser = null;
   let currentProfile = null;
+  let lastScanResult = null; // {address, score, verdict} — used by the Share button
   let pendingSignup = null; // holds {username, password, passkey} between signup and passkey-confirm steps
 
   // ---- ticker ----
@@ -429,6 +533,10 @@
   function toggleSig(){
     document.getElementById('toggleSignals').classList.toggle('open');
     document.getElementById('sigPanel').classList.toggle('open');
+  }
+
+  function toggleFaq(el){
+    el.parentElement.classList.toggle('open');
   }
 
   // ============================================================
@@ -505,10 +613,15 @@
       return;
     }
 
-    // create profile row + passkey
+    // create profile row + passkey — also credit whoever referred this signup, if any
     try{
       const passkey = generatePasskey();
-      const { error: profileError } = await sb.from('profiles').insert({ id: data.user.id, username: username.toLowerCase() });
+      const urlParams = new URLSearchParams(window.location.search);
+      const referredBy = urlParams.get('ref');
+      const profileInsert = { id: data.user.id, username: username.toLowerCase() };
+      if(referredBy) profileInsert.referred_by = referredBy;
+
+      const { error: profileError } = await sb.from('profiles').insert(profileInsert);
       if(profileError) throw profileError;
 
       const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });
@@ -592,7 +705,7 @@
       currentProfile = null;
       authStatusEl.innerHTML = `<button class="auth-btn primary" onclick="openAuthModal('login')">Log in</button>`;
       document.getElementById('historySection').style.display = 'none';
-      updateScanLimitNote(0, 5, 'free');
+      updateScanLimitNote(0, 'free');
       return;
     }
 
@@ -601,17 +714,20 @@
     const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
 
     if(!profile){
-      // Profile not created yet (mid-signup) — show a neutral loading state, don't crash
-      authStatusEl.innerHTML = `<span class="who" style="color:var(--ink-faint);">Setting up account…</span>`;
+      // Profile not created yet (mid-signup) — or a broken leftover account from
+      // before the database was set up. Give a way out either way.
+      authStatusEl.innerHTML = `<span class="who" style="color:var(--ink-faint);">Setting up account…</span> <button class="auth-btn" onclick="doLogout()">Log out</button>`;
       document.getElementById('historySection').style.display = 'none';
       return;
     }
 
     currentProfile = profile;
 
+    const planLabel = profile.subscription === 'detective' ? 'DETECTIVE' : (profile.subscription === 'boost' ? 'BOOST' : 'FREE');
     authStatusEl.innerHTML = `
       <span class="who">@${profile.username}</span>
-      <span class="plan-tag ${profile.subscription}">${profile.subscription === 'detective' ? 'DETECTIVE' : 'FREE'}</span>
+      <span class="plan-tag ${profile.subscription}">${planLabel}</span>
+      <button class="auth-btn" id="referralBtn" onclick="copyReferralLink()">Copy referral link</button>
       <button class="auth-btn" onclick="doLogout()">Log out</button>
     `;
 
@@ -621,12 +737,12 @@
   }
 
   async function refreshScanStatus(){
-    if(!currentUser){ updateScanLimitNote(0, 5, 'free'); return; }
+    if(!currentUser){ updateScanLimitNote(0, 'free'); return; }
     const { data: usedToday } = await sb.rpc('scans_used_today');
-    updateScanLimitNote(usedToday || 0, 5, currentProfile.subscription);
+    updateScanLimitNote(usedToday || 0, currentProfile.subscription);
   }
 
-  function updateScanLimitNote(used, limit, plan){
+  function updateScanLimitNote(used, plan){
     const note = document.getElementById('scanLimitNote');
     const scanBtn = document.getElementById('scanBtn');
 
@@ -642,23 +758,30 @@
       scanBtn.disabled = false;
       return;
     }
+
+    const limit = plan === 'boost' ? 25 : 5;
     const remaining = Math.max(0, limit - used);
+    const upgradeHint = plan === 'boost'
+      ? 'Boost Pass · resets on a rolling 24hr basis'
+      : 'Detective or Boost Pass removes this limit';
+
     if(remaining > 0){
-      note.textContent = `${remaining} of ${limit} free scans left today · Detective removes this limit`;
+      note.textContent = `${remaining} of ${limit} scans left · ${upgradeHint}`;
       note.style.color = 'var(--ink-faint)';
       scanBtn.disabled = false;
     } else {
-      note.textContent = `You've reached your 5 free scans for today. Upgrade to Detective for unlimited scans.`;
+      note.textContent = plan === 'boost'
+        ? `You've used all 25 scans in the last 24 hours. More will free up as the rolling window resets.`
+        : `You've reached your 5 free scans for today. Upgrade to Detective or a Boost Pass for more.`;
       note.style.color = 'var(--amber)';
       scanBtn.disabled = true;
     }
-  }
-
-  async function loadHistory(){
+  }async function loadHistory(){
+    const hasFullHistory = currentProfile.subscription === 'detective' || currentProfile.subscription === 'boost';
     document.getElementById('historyHeading').textContent =
-      currentProfile.subscription === 'detective' ? 'Your scan history' : "Today's scans";
+      hasFullHistory ? 'Your scan history' : "Today's scans";
     let query = sb.from('scans').select('*').order('created_at', { ascending: false });
-    if(currentProfile.subscription !== 'detective'){
+    if(!hasFullHistory){
       // free plan: history limited to today's scans only
       const startOfDay = new Date();
       startOfDay.setHours(0,0,0,0);
@@ -694,6 +817,21 @@
     window.location.href = `${link}?client_reference_id=${currentUser.id}`;
   }
 
+  function shareResult(){
+    if(!lastScanResult) return;
+    const { address, score, verdict } = lastScanResult;
+    const shortAddr = address.length > 14 ? address.slice(0,6)+'…'+address.slice(-4) : address;
+    const text = `MemeShield scanned ${shortAddr} → ${score}/100 (${verdict}). Check any token: https://mewtotrades.github.io/MemeSheild/`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('shareBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
   // ============================================================
   // SCANNING LOGIC (on-chain checks unchanged; gated + counted via Supabase)
   // ============================================================
@@ -714,6 +852,50 @@
     return data.result;
   }
   function isLikelySolanaAddress(str){ return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(str); }
+  function isLikelyEvmAddress(str){ return /^0x[a-fA-F0-9]{40}$/.test(str); }
+
+  // Free public RPC endpoints — no API key or signup needed for any of these.
+  const EVM_RPC = {
+    'Ethereum': 'https://eth.llamarpc.com',
+    'Base': 'https://mainnet.base.org',
+    'BNB Chain': 'https://bsc-dataseed.binance.org',
+    'Arbitrum': 'https://arb1.arbitrum.io/rpc',
+    'Polygon': 'https://polygon-rpc.com',
+    'Avalanche': 'https://api.avax.network/ext/bc/C/rpc',
+    'Optimism': 'https://mainnet.optimism.io',
+  };
+
+  async function evmRpc(rpcUrl, method, params){
+    const res = await fetch(rpcUrl, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({jsonrpc:'2.0', id:1, method, params})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.result;
+  }
+
+  // Checks whether the contract's ownership has been renounced — the closest
+  // EVM equivalent to Solana's "mint authority revoked". Uses the standard
+  // Ownable owner() function (selector 0x8da5cb5b), a widely-used pattern.
+  // If the contract doesn't implement it, we honestly report "unknown" rather
+  // than guessing.
+  async function fetchRealEvmSignals(address, chain){
+    const rpcUrl = EVM_RPC[chain];
+    if(!rpcUrl) throw new Error('no RPC for chain');
+
+    const result = await evmRpc(rpcUrl, 'eth_call', [
+      { to: address, data: '0x8da5cb5b' }, // owner()
+      'latest'
+    ]);
+
+    if(!result || result === '0x' || result.length < 42){
+      return { ownershipStatus: 'unknown' };
+    }
+    const ownerAddr = '0x' + result.slice(-40);
+    const isRenounced = /^0x0+$/.test(ownerAddr);
+    return { ownershipStatus: isRenounced ? 'renounced' : 'active', ownerAddress: ownerAddr };
+  }
 
   async function fetchRealSolanaSignals(mint){
     const acct = await rpc('getAccountInfo', [mint, {encoding:'jsonParsed'}]);
@@ -789,6 +971,24 @@
           ['Contract age', 'warn', 'Not checked — verify creation date on a block explorer'],
           ['Creator wallet history', 'warn', 'Not checked — needs a paid indexer, verify manually'],
         ];
+      } else if(isLikelyEvmAddress(raw) && EVM_RPC[activeChain]){
+        const s = await fetchRealEvmSignals(raw, activeChain);
+        dataSource = 'onchain';
+        let riskPoints = 0;
+        if(s.ownershipStatus === 'active') riskPoints += 40;
+        else if(s.ownershipStatus === 'unknown') riskPoints += 15; // can't verify, mild caution
+        score = Math.min(99, riskPoints);
+        checks = [
+          ['Contract ownership', s.ownershipStatus==='renounced'?'ok':(s.ownershipStatus==='active'?'bad':'warn'),
+            s.ownershipStatus==='renounced' ? 'Renounced — no privileged owner can act on this contract'
+            : s.ownershipStatus==='active' ? `Still active — ${s.ownerAddress.slice(0,10)}… can call owner-only functions`
+            : 'Not a standard Ownable contract — verify manually'],
+          ['Top 10 holder concentration', 'warn', 'Not checked — needs a paid indexer, verify on the block explorer'],
+          ['LP lock status', 'warn', 'Not checked — verify manually on the DEX/lock service'],
+          ['Contract age', 'warn', 'Not checked — verify creation date on a block explorer'],
+          ['Contract verification', 'warn', 'Not checked — verify source code is published on the block explorer'],
+          ['Creator wallet history', 'warn', 'Not checked — needs a paid indexer, verify manually'],
+        ];
       } else { throw new Error('fallback'); }
     } catch(e){
       score = hashScore(raw);
@@ -822,6 +1022,8 @@
       return;
     }
 
+    lastScanResult = { address: raw, score, verdict: verdictText };
+
     document.getElementById('scannedAddr').textContent =
       (raw.length>42 ? raw.slice(0,20)+'…'+raw.slice(-8) : raw) +
       (dataSource==='onchain' ? '  ·  live on-chain data' : '  ·  heuristic estimate');
@@ -834,23 +1036,129 @@
     tag.style.background = `rgba(${verdictColor==='mint'?'53,217,154':verdictColor==='amber'?'240,180,41':'255,92,114'},.12)`;
     tag.style.color = `var(--${verdictColor})`;
 
+    document.getElementById('scoreNum').style.color = `var(--${verdictColor})`;
+    const resultBoxEl = document.getElementById('resultBox');
+    resultBoxEl.classList.remove('verdict-mint','verdict-amber','verdict-coral','show');
+    void resultBoxEl.offsetWidth; // restart the reveal animation on repeat scans
+    resultBoxEl.classList.add(`verdict-${verdictColor}`);
+
+    // Only the first 2 checks (mint + freeze authority) are free.
+    // The rest of the evidence checklist is a paid perk (Boost Pass or Detective).
+    const hasFullChecklist = currentProfile && (currentProfile.subscription === 'detective' || currentProfile.subscription === 'boost');
     const cl = document.getElementById('checklist');
-    cl.innerHTML = checks.map(([name,flag,detail])=>`
-      <div class="check-item"><span class="name">${name}</span>
-      <span>${detail} <span class="flag ${flag}">${flag==='ok'?'PASS':flag==='warn'?'WATCH':'FLAG'}</span></span></div>
-    `).join('');
+    cl.innerHTML = checks.map(([name,flag,detail], i)=>{
+      const isLocked = !hasFullChecklist && i >= 2;
+      return `
+      <div class="check-item ${isLocked ? 'locked' : ''}">
+        <span class="name">${name}</span>
+        <span>${detail} <span class="flag ${flag}">${flag==='ok'?'PASS':flag==='warn'?'WATCH':'FLAG'}</span></span>
+        ${isLocked ? `<div class="locked-overlay">🔒 Unlock with Boost Pass or Detective</div>` : ''}
+      </div>`;
+    }).join('');
 
     document.getElementById('resultBox').classList.add('show');
     document.getElementById('resultBox').scrollIntoView({behavior:'smooth', block:'nearest'});
 
+    const watchBtn = document.getElementById('watchlistBtn');
+    const canWatch = currentProfile && (currentProfile.subscription === 'boost' || currentProfile.subscription === 'detective');
+    if(canWatch){
+      watchBtn.style.display = 'inline-block';
+      const { data: existing } = await sb.from('watchlist').select('id')
+        .eq('user_id', currentUser.id).eq('address', raw).eq('chain', activeChain).maybeSingle();
+      watchBtn.textContent = existing ? '★ Watching' : '☆ Watch';
+      watchBtn.classList.toggle('watching', !!existing);
+    } else {
+      watchBtn.style.display = 'none';
+    }
+
     await refreshScanStatus();
     await loadHistory();
+    loadTrustCounter();
+    loadActivityFeed();
   }
 
   function tick(){}
 
+  // ---- public activity feed ----
+  function timeAgo(dateStr){
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs/60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins/60);
+    if(hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs/24)}d ago`;
+  }
+
+  async function loadActivityFeed(){
+    try{
+      const { data: recent } = await sb.rpc('recent_public_scans');
+      if(!recent || recent.length === 0) return;
+      const verdictColor = v => v==='LOW RISK'?'mint':(v==='MODERATE RISK'?'amber':'coral');
+      document.getElementById('activityFeedList').innerHTML = recent.map(r => `
+        <div class="activity-item">
+          <span>${r.address.length>20?r.address.slice(0,10)+'…'+r.address.slice(-6):r.address} · ${r.chain}</span>
+          <span class="a-verdict" style="color:var(--${verdictColor(r.verdict)});">${r.score}/100</span>
+          <span class="a-time">${timeAgo(r.created_at)}</span>
+        </div>
+      `).join('');
+      document.getElementById('activityFeed').style.display = 'block';
+    } catch(e){ /* fail silently */ }
+  }
+
+  // ---- watchlist (Boost Pass / Detective only) ----
+  async function toggleWatchlist(){
+    if(!lastScanResult || !currentUser) return;
+    const btn = document.getElementById('watchlistBtn');
+    const activeChain = document.querySelector('.chip.active').textContent;
+    const { address } = lastScanResult;
+
+    const { data: existing } = await sb.from('watchlist').select('id')
+      .eq('user_id', currentUser.id).eq('address', address).eq('chain', activeChain).maybeSingle();
+
+    if(existing){
+      await sb.from('watchlist').delete().eq('id', existing.id);
+      btn.textContent = '☆ Watch';
+      btn.classList.remove('watching');
+    } else {
+      await sb.from('watchlist').insert({ user_id: currentUser.id, address, chain: activeChain });
+      btn.textContent = '★ Watching';
+      btn.classList.add('watching');
+    }
+  }
+
+  // ---- referral link ----
+  function getReferralLink(){
+    if(!currentUser) return null;
+    return `https://mewtotrades.github.io/MemeSheild/?ref=${currentUser.id}`;
+  }
+  function copyReferralLink(){
+    const link = getReferralLink();
+    if(!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('referralBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = original; }, 2000);
+    });
+  }
+
+  // ---- trust counter ----
+  async function loadTrustCounter(){
+    try{
+      const { data: total } = await sb.rpc('total_scans_count');
+      if(total !== null && total !== undefined){
+        document.getElementById('trustCounterText').textContent =
+          `${total.toLocaleString()} token${total === 1 ? '' : 's'} scanned so far`;
+        document.getElementById('trustRow').style.display = 'flex';
+      }
+    } catch(e){ /* fail silently — not critical */ }
+  }
+
   // ---- boot ----
   refreshSession();
+  loadTrustCounter();
+  loadActivityFeed();
   sb.auth.onAuthStateChange(() => refreshSession());
 </script>
 </body>
