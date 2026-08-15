@@ -506,12 +506,19 @@
     }
 
     // create profile row + passkey
-    const passkey = generatePasskey();
-    await sb.from('profiles').insert({ id: data.user.id, username: username.toLowerCase() });
-    await sb.rpc('set_passkey', { new_passkey: passkey });
+    try{
+      const passkey = generatePasskey();
+      const { error: profileError } = await sb.from('profiles').insert({ id: data.user.id, username: username.toLowerCase() });
+      if(profileError) throw profileError;
 
-    document.getElementById('passkeyDisplay').textContent = passkey;
-    switchView('passkey');
+      const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });
+      if(passkeyError) throw passkeyError;
+
+      document.getElementById('passkeyDisplay').textContent = passkey;
+      switchView('passkey');
+    } catch(e){
+      showError('signupError', 'Account created, but something went wrong finishing setup: ' + (e.message || 'unknown error') + '. Try logging in — your account may already exist.');
+    }
 
     btn.disabled = false;
     btn.textContent = 'Create account';
