@@ -9,7 +9,7 @@
 <meta property="og:title" content="MemeShield — Token Risk Scan">
 <meta property="og:description" content="Paste any Solana or EVM token address and get an instant rug-pull risk score backed by real on-chain data.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://mewtotrades.github.io/MemeSheild/">
+<meta property="og:url" content="https://verify.github.io/MemeSheild/">
 <meta property="og:image" content="https://mewtotrades.github.io/MemeSheild/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="MemeShield — Token Risk Scan">
@@ -467,6 +467,7 @@
     clearError('signupError');
     const username = document.getElementById('signupUsername').value.trim();
     const password = document.getElementById('signupPassword').value;
+    const btn = document.querySelector('#signupView .modal-btn');
 
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){
       showError('signupError', 'Username must be 3-20 characters, letters/numbers/underscore only.');
@@ -477,6 +478,11 @@
       return;
     }
 
+    // Prevent double-clicks from firing two signup requests at once
+    if(btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Creating…';
+
     const { data, error } = await sb.auth.signUp({
       email: usernameToEmail(username),
       password
@@ -484,6 +490,8 @@
 
     if(error){
       showError('signupError', error.message.includes('already') ? 'That username is taken.' : error.message);
+      btn.disabled = false;
+      btn.textContent = 'Create account';
       return;
     }
 
@@ -494,6 +502,9 @@
 
     document.getElementById('passkeyDisplay').textContent = passkey;
     switchView('passkey');
+
+    btn.disabled = false;
+    btn.textContent = 'Create account';
   }
 
   function finishSignupFlow(){
