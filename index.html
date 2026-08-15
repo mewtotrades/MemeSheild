@@ -483,10 +483,20 @@
     btn.disabled = true;
     btn.textContent = 'Creating…';
 
-    const { data, error } = await sb.auth.signUp({
-      email: usernameToEmail(username),
-      password
-    });
+    let data, error;
+    try{
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000));
+      const result = await Promise.race([
+        sb.auth.signUp({ email: usernameToEmail(username), password }),
+        timeout
+      ]);
+      data = result.data; error = result.error;
+    } catch(e){
+      showError('signupError', 'This is taking too long — check your internet connection and try again.');
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+      return;
+    }
 
     if(error){
       showError('signupError', error.message.includes('already') ? 'That username is taken.' : error.message);
@@ -579,7 +589,17 @@
       return;
     }
 
-    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    // maybeSingle() instead of single() — avoids a crash if the profile
+    // row hasn't been created yet (brief gap right after signup)
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+
+    if(!profile){
+      // Profile not created yet (mid-signup) — show a neutral loading state, don't crash
+      authStatusEl.innerHTML = `<span class="who" style="color:var(--ink-faint);">Setting up account…</span>`;
+      document.getElementById('historySection').style.display = 'none';
+      return;
+    }
+
     currentProfile = profile;
 
     authStatusEl.innerHTML = `
