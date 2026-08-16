@@ -674,7 +674,8 @@
       const { error: profileError } = await sb.from('profiles').insert(profileInsert);
       if(profileError) throw profileError;
 
-      const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });if(passkeyError) throw passkeyError;
+      const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });
+      if(passkeyError) throw passkeyError;
 
       // Credit the referrer with +3 scans/day, if this signup came through a referral link
       if(referredBy){
@@ -810,8 +811,8 @@
       scanBtn.disabled = false; // login modal opens on click instead
       return;
     }
-    if(plan === 'detective'){
-      note.textContent = 'Detective plan — unlimited scans.';
+    if(plan === 'detective' || plan === 'syndicate'){
+      note.textContent = plan === 'syndicate' ? 'Syndicate plan — unlimited scans.' : 'Detective plan — unlimited scans.';
       note.style.color = 'var(--mint)';
       scanBtn.disabled = false;
       return;
@@ -839,7 +840,7 @@
   }
 
   async function loadHistory(){
-    const hasFullHistory = currentProfile.subscription === 'detective' || currentProfile.subscription === 'boost';
+    const hasFullHistory = ['detective','boost','syndicate'].includes(currentProfile.subscription);
     document.getElementById('historyHeading').textContent =
       hasFullHistory ? 'Your scan history' : "Today's scans";
     let query = sb.from('scans').select('*').order('created_at', { ascending: false });
@@ -1215,7 +1216,7 @@
 
     // Only the first 2 checks (mint + freeze authority) are free.
     // The rest of the evidence checklist is a paid perk (Boost Pass or Detective).
-    const hasFullChecklist = currentProfile && (currentProfile.subscription === 'detective' || currentProfile.subscription === 'boost');
+    const hasFullChecklist = currentProfile && ['detective','boost','syndicate'].includes(currentProfile.subscription);
     const cl = document.getElementById('checklist');
     cl.innerHTML = checks.map(([name,flag,detail], i)=>{
       const isLocked = !hasFullChecklist && i >= 2;
@@ -1231,7 +1232,7 @@
     document.getElementById('resultBox').scrollIntoView({behavior:'smooth', block:'nearest'});
 
     const watchBtn = document.getElementById('watchlistBtn');
-    const canWatch = currentProfile && (currentProfile.subscription === 'boost' || currentProfile.subscription === 'detective');
+    const canWatch = currentProfile && ['detective','boost','syndicate'].includes(currentProfile.subscription);
     if(canWatch){
       watchBtn.style.display = 'inline-block';
       const { data: existing } = await sb.from('watchlist').select('id')
