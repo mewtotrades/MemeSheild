@@ -80,6 +80,10 @@
   }
   .trust-dot{width:7px; height:7px; border-radius:50%; background:var(--mint); box-shadow:0 0 8px var(--mint); flex-shrink:0;}
 
+  .bulk-result-item{
+    display:flex; justify-content:space-between; padding:8px 12px; background:var(--panel-2);
+    border:1px solid var(--line); border-radius:6px; font-family:var(--mono); font-size:11px; color:var(--ink-dim); margin-bottom:6px;
+  }
   .activity-feed{margin-top:60px; border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:20px;}
   .activity-feed-title{font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:14px;}
   .activity-item{
@@ -421,6 +425,29 @@
       </div>
     </div>
 
+    <div id="syndicateTools" style="display:none;">
+      <div class="section-head" style="margin-top:60px;"><h2 style="font-size:20px;">Syndicate tools</h2></div>
+
+      <div class="activity-feed">
+        <div class="activity-feed-title">REST API access</div>
+        <p style="color:var(--ink-dim); font-size:12.5px; margin:0 0 14px;">Scan tokens from your own scripts or tools. Your key is shown once — save it somewhere safe.</p>
+        <div id="apiKeySection">
+          <button class="tier-btn" style="max-width:220px;" onclick="handleGenerateApiKey()">Generate API key</button>
+        </div>
+        <pre style="background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:14px; margin-top:14px; font-family:var(--mono); font-size:11px; color:var(--ink-dim); overflow-x:auto;">curl -X POST https://bzcqibafanbwhvbrboct.supabase.co/functions/v1/scan-api \
+  -H "Content-Type: application/json" \
+  -d '{"api_key":"msk_...", "address":"TOKEN_ADDRESS", "chain":"Solana"}'</pre>
+      </div>
+
+      <div class="activity-feed" style="margin-top:16px;">
+        <div class="activity-feed-title">Bulk address scanning</div>
+        <p style="color:var(--ink-dim); font-size:12.5px; margin:0 0 14px;">Paste multiple addresses (one per line, same chain as selected above) and scan them all at once.</p>
+        <textarea id="bulkAddresses" rows="5" placeholder="address1&#10;address2&#10;address3" style="width:100%; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:12px; color:var(--ink); font-family:var(--mono); font-size:12px; resize:vertical;"></textarea>
+        <button class="tier-btn" style="max-width:180px; margin-top:10px;" onclick="runBulkScan()">Scan all</button>
+        <div id="bulkResults" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
     <div class="section-head">
       <h2>Frequently asked</h2>
     </div>
@@ -630,7 +657,6 @@
     }
 
     if(error){
-
       showError('signupError', error.message.includes('already') ? 'That username is taken.' : error.message);
       btn.disabled = false;
       btn.textContent = 'Create account';
@@ -648,8 +674,7 @@
       const { error: profileError } = await sb.from('profiles').insert(profileInsert);
       if(profileError) throw profileError;
 
-      const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });
-      if(passkeyError) throw passkeyError;
+      const { error: passkeyError } = await sb.rpc('set_passkey', { new_passkey: passkey });if(passkeyError) throw passkeyError;
 
       // Credit the referrer with +3 scans/day, if this signup came through a referral link
       if(referredBy){
@@ -763,6 +788,10 @@
     await refreshScanStatus();
     await loadHistory();
     document.getElementById('historySection').style.display = 'block';
+
+    const isSyndicate = profile.subscription === 'syndicate';
+    document.getElementById('syndicateTools').style.display = isSyndicate ? 'block' : 'none';
+    if(isSyndicate) checkApiKeyStatus();
   }
 
   async function refreshScanStatus(){
@@ -1013,14 +1042,8 @@
     runScan();
   }
 
-  async function runScan(){
-    const raw = document.getElementById('addrInput').value.trim();
-    if(!raw){ return; }
-
-    const activeChain = document.querySelector('.chip.active').textContent;
-    const scanBtn = document.getElementById('scanBtn');
-    scanBtn.textContent = 'Scanning…'; scanBtn.disabled = true;
-
+  // ---- Core scoring logic, factored out so both single-scan and bulk-scan can use it ----
+  async function analyzeAddress(raw, activeChain){
     let score, checks, dataSource = 'heuristic';
     try{
       if(activeChain === 'Solana' && isLikelySolanaAddress(raw)){
@@ -1047,7 +1070,7 @@
         dataSource = 'onchain';
         let riskPoints = 0;
         if(s.ownershipStatus === 'active') riskPoints += 40;
-        else if(s.ownershipStatus === 'unknown') riskPoints += 15; // can't verify, mild caution
+        else if(s.ownershipStatus === 'unknown') riskPoints += 15;
         score = Math.min(99, riskPoints);
         checks = [
           ['Contract ownership', s.ownershipStatus==='renounced'?'ok':(s.ownershipStatus==='active'?'bad':'warn'),
@@ -1072,8 +1095,73 @@
         ['Creator wallet history', score%8<4?'ok':'bad', 'Not checked — needs paid indexer'],
       ];
     }
+    const verdictText = score < 35 ? 'LOW RISK' : (score < 65 ? 'MODERATE RISK' : 'HIGH RISK');
+    return { score, checks, dataSource, verdictText };
+  }
 
-    let verdictText = score < 35 ? 'LOW RISK' : (score < 65 ? 'MODERATE RISK' : 'HIGH RISK');
+  // ---- Syndicate: bulk scanning ----
+  async function runBulkScan(){
+    const raw = document.getElementById('bulkAddresses').value.trim();
+    if(!raw) return;
+    const addresses = raw.split('\n').map(a => a.trim()).filter(Boolean);
+    const activeChain = document.querySelector('.chip.active').textContent;
+    const resultsEl = document.getElementById('bulkResults');
+    resultsEl.innerHTML = `<div style="color:var(--ink-faint); font-family:var(--mono); font-size:12px;">Scanning ${addresses.length} addresses…</div>`;
+
+    const rows = [];
+    for(const addr of addresses){
+      try{
+        const { score, verdictText } = await analyzeAddress(addr, activeChain);
+        await sb.from('scans').insert({ user_id: currentUser.id, address: addr, chain: activeChain, score, verdict: verdictText });
+        const color = score < 35 ? 'mint' : (score < 65 ? 'amber' : 'coral');
+        rows.push(`<div class="bulk-result-item"><span>${addr.length>24?addr.slice(0,12)+'…'+addr.slice(-6):addr}</span><span style="color:var(--${color}); font-weight:700;">${score}/100 · ${verdictText}</span></div>`);
+      } catch(e){
+        rows.push(`<div class="bulk-result-item"><span>${addr.length>24?addr.slice(0,12)+'…'+addr.slice(-6):addr}</span><span style="color:var(--coral);">Failed to scan</span></div>`);
+      }
+    }
+    resultsEl.innerHTML = rows.join('');
+    loadTrustCounter();
+    loadActivityFeed();
+    await loadHistory();
+  }
+
+  // ---- Syndicate: API key management ----
+  async function handleGenerateApiKey(){
+    const section = document.getElementById('apiKeySection');
+    try{
+      const { data: key, error } = await sb.rpc('generate_api_key');
+      if(error) throw error;
+      section.innerHTML = `
+        <div class="passkey-reveal" style="max-width:100%; word-break:break-all;">${key}</div>
+        <div class="passkey-warn">This key won't be shown again. Save it somewhere safe — anyone with it can scan on your account's behalf.</div>
+        <button class="tier-btn" style="max-width:220px;" onclick="handleGenerateApiKey()">Generate a new key (invalidates the old one)</button>
+      `;
+    } catch(e){
+      section.innerHTML = `<div style="color:var(--coral); font-size:12.5px;">Couldn't generate a key: ${e.message}</div>`;
+    }
+  }
+
+  async function checkApiKeyStatus(){
+    try{
+      const { data: hasKey } = await sb.rpc('has_api_key');
+      if(hasKey){
+        document.getElementById('apiKeySection').innerHTML = `
+          <p style="color:var(--ink-dim); font-size:12.5px; margin:0 0 10px;">You already have an active API key.</p>
+          <button class="tier-btn" style="max-width:220px;" onclick="handleGenerateApiKey()">Generate a new key (invalidates the old one)</button>
+        `;
+      }
+    } catch(e){ /* fail silently */ }
+  }
+
+  async function runScan(){
+    const raw = document.getElementById('addrInput').value.trim();
+    if(!raw){ return; }
+
+    const activeChain = document.querySelector('.chip.active').textContent;
+    const scanBtn = document.getElementById('scanBtn');
+    scanBtn.textContent = 'Scanning…'; scanBtn.disabled = true;
+
+    const { score, checks, dataSource, verdictText } = await analyzeAddress(raw, activeChain);
 
     // THE REAL LIMIT ENFORCEMENT: this insert is rejected by the database
     // itself (via Row Level Security) if a free user already has 5 scans today.
